@@ -19,6 +19,7 @@ from pathlib import Path
 resourcesDir = 'resources/'
 oldDate = datetime.date(2019, 1, 1)  # A very old date for initializations
 
+
 def init():
     """
     Performs a few sanity checks and initializations
@@ -30,6 +31,7 @@ def init():
         os.mkdir(resourcesDir)
     except FileExistsError:
         pass
+
 
 def downloadPDF(link, filename):
     """
@@ -45,6 +47,7 @@ def downloadPDF(link, filename):
         return False
     finally:
         pdfFile.close()
+
 
 def __isSamePDF(serverFile, localFile):
     """
@@ -66,12 +69,15 @@ def __isSamePDF(serverFile, localFile):
 
     return isSame
 
+
 def getKerala():
     """
     Parses Kerala DHS website to obtain latest PDF bulletin
     """
     linkPre = 'http://dhs.kerala.gov.in'
-    DHSlink = linkPre + '/%e0%b4%a1%e0%b5%86%e0%b4%af%e0%b4%bf%e0%b4%b2%e0%b4%bf-%e0%b4%ac%e0%b5%81%e0%b4%b3%e0%b5%8d%e0%b4%b3%e0%b4%b1%e0%b5%8d%e0%b4%b1%e0%b4%bf%e0%b4%a8%e0%b5%8d%e2%80%8d/'
+    DHSlink = linkPre + '/%e0%b4%a1%e0%b5%86%e0%b4%af%e0%b4%bf' + \
+    '%e0%b4%b2%e0%b4%bf-%e0%b4%ac%e0%b5%81%e0%b4%b3%e0%b5%8d%e' + \
+    '0%b4%b3%e0%b4%b1%e0%b5%8d%e0%b4%b1%e0%b4%bf%e0%b4%a8%e0%b5%8d%e2%80%8d/'
 
     # Parse tags
     req = urllib3.PoolManager()
@@ -95,7 +101,7 @@ def getKerala():
             bulletinPage = req.request('GET', bulletinLink)
             soup = BeautifulSoup(bulletinPage.data, 'html.parser')
             try:
-                divTag = soup.find('div', attrs={'class':'entry-content'})
+                divTag = soup.find('div', attrs={'class': 'entry-content'})
                 ptags = divTag.findAll('p')
             except AttributeError:
                 raise ConnectionError('Broken internet connection. Rerun.')
@@ -104,13 +110,15 @@ def getKerala():
                 if 'English' in tag.text:
                     bulletinlink = linkPre + tag.a.get('href')
 
-            filename = resourcesDir + 'Kerala' + bulletinDate.strftime('%d-%m-%Y') + '.pdf'
+            filename = resourcesDir + 'Kerala' + \
+                bulletinDate.strftime('%d-%m-%Y') + '.pdf'
             if __isSamePDF(bulletinLink, filename):
                 lastUpdated = None
-            else :
+            else:
                 lastUpdated = datetime.datetime.now()
 
     return [bulletinDate, bulletinLink, lastUpdated]
+
 
 if __name__ == '__main__':
     init()
