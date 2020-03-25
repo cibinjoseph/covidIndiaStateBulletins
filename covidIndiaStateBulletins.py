@@ -31,7 +31,7 @@ def init():
     except FileExistsError:
         pass
 
-def __downloadPDF(link, filename):
+def downloadPDF(link, filename):
     """
     Downloads pdf from link and saves it with filename
     """
@@ -52,7 +52,7 @@ def __isSamePDF(serverFile, localFile):
     """
     if Path(localFile).is_file():
         # If local file exists
-        __downloadPDF(serverFile, localFile + 'dummy')
+        downloadPDF(serverFile, localFile + 'dummy')
         if filecmp.cmp(localFile, localFile + 'dummy', shallow=False):
             os.remove(localFile + 'dummy')
             isSame = True
@@ -61,7 +61,7 @@ def __isSamePDF(serverFile, localFile):
             isSame = False
     else:
         # If local file does not exist
-        __downloadPDF(serverFile, localFile)
+        downloadPDF(serverFile, localFile)
         isSame = False
 
     return isSame
