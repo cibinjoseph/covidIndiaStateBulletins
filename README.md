@@ -1,17 +1,21 @@
 # covidIndiaStateBulletins
-Python module to get latest COVID bulletins from Indian state health department webpages
+Python3 module to get latest COVID bulletins from Indian state health department webpages
 
 ## Usage:
-**Example 1**: Download latest pdf COVID bulletin for Delhi
+**Example 1**: To download the latest COVID bulletin for Delhi, use
+ the function `getDelhi()`.
 ```python
 import covidIndiaStateBulletins as co
 
+# Initialize module 
 co.init()
+
+# Get bulletin from Delhi Health Department website
 bulletinDate, bulletinLink, lastUpdatedDate = co.getDelhi()
 
-print(bulletinDate.strftime('%d.%m.%Y'))     # Bulletin date in specified format
-print(bulletinLink)                          # Link to latest bulletin
-print(lastUpdatedDate.strftime('%d.%m.%Y'))  # Last updated date in specified format
+print(bulletinDate)     # Bulletin date
+print(bulletinLink)     # Link to latest bulletin
+print(lastUpdatedDate)  # Last updated date 
 ```
 
 # Documentation
