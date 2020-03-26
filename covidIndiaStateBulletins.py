@@ -21,12 +21,17 @@ from re import search, sub
 
 resourcesDir = 'resources/'
 oldDate = datetime.date(2019, 1, 1)  # A very old date for initializations
+__verbose = False
+__statusNum = 0
 
 
-def init():
+def init(verbose=False):
     """
     Performs a few sanity checks and initializations
     """
+    global __verbose
+    __verbose = verbose
+
     # System version check
     if sys.version_info.major < 3:
         raise SyntaxError('Use python version 3+')
@@ -75,6 +80,41 @@ def __isSamePDF(serverFile, localFile):
 
     return isSame
 
+def updatePDF(stateName, bulletinDate, bulletinLink):
+    """
+    Checks if server bulletin is updated. Overwrites local file if so.
+    Returns current date and time for lastUpdatedDate if overwriting.
+    Returns None if no updates are available.
+    """
+    filename = resourcesDir + stateName + \
+        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
+    if __isSamePDF(bulletinLink, filename):
+        lastUpdated = None
+    else:
+        lastUpdated = datetime.datetime.now()
+
+    return lastUpdated
+
+def printStatus(stateName, statusNum=None):
+    """
+    Prints status messages if __verbose is requested
+    """
+    if __verbose:
+        global __statusNum
+        if statusNum == 0:
+            __statusNum = 0
+        else:
+            __statusNum = __statusNum + 1
+
+        messages = {
+            0: 'Parsing website for state: ' + stateName,
+            1: 'Obtaining bulletin date for state: ' + stateName,
+            2: 'Checking against local pdf bulletin for state: ' + stateName,
+            3: 'Completed checking updates for state: ' + stateName
+        }
+        totalSteps = len(messages)
+        print('(' + str(__statusNum) + '/' + str(totalSteps) + ') ' +  \
+              messages.get(__statusNum, 'Invalid status number'))
 
 def getKerala():
     """
@@ -87,12 +127,14 @@ def getKerala():
     '0%b4%b3%e0%b4%b1%e0%b5%8d%e0%b4%b1%e0%b4%bf%e0%b4%a8%e0%b5%8d%e2%80%8d/'
 
     # Parse tags
+    printStatus(stateName, 0)
     req = urllib3.PoolManager()
     healthDeptpage = req.request('GET', healthDeptlink)
     soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
     tags = soup.findAll('h3', attrs={'class': 'entry-title'})
 
     # Get latest date
+    printStatus(stateName)
     bulletinDate = oldDate
     bulletinLink = None
     lastUpdated = None
@@ -121,13 +163,10 @@ def getKerala():
                     bulletinLink = linkPre + tag.a.get('href')
 
     # Check if latest bulletin on server is same as local file
-    filename = resourcesDir + stateName + \
-        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
-    if __isSamePDF(bulletinLink, filename):
-        lastUpdated = None
-    else:
-        lastUpdated = datetime.datetime.now()
+    printStatus(stateName)
+    lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
+    printStatus(stateName)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getDelhi():
@@ -140,6 +179,7 @@ def getDelhi():
     'Health/Home/Covid19/Health+Bulletin'
 
     # Parse tags
+    printStatus(stateName, 0)
     req = urllib3.PoolManager()
     healthDeptpage = req.request('GET', healthDeptlink)
     soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
@@ -147,6 +187,7 @@ def getDelhi():
     tags = tdTag.find_all('li')
 
     # Get latest date
+    printStatus(stateName)
     bulletinDate = oldDate
     bulletinLink = None
     lastUpdated = None
@@ -169,13 +210,10 @@ def getDelhi():
             bulletinLink = linkPre + tag.a.get('href')
 
     # Check if latest bulletin on server is same as local file
-    filename = resourcesDir + stateName + \
-        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
-    if __isSamePDF(bulletinLink, filename):
-        lastUpdated = None
-    else:
-        lastUpdated = datetime.datetime.now()
+    printStatus(stateName)
+    lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
+    printStatus(stateName)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getTelangana():
@@ -187,6 +225,7 @@ def getTelangana():
     healthDeptlink = linkPre + '/announcements/media-bulletins/'
 
     # Parse tags
+    printStatus(stateName, 0)
     req = urllib3.PoolManager()
     healthDeptpage = req.request('GET', healthDeptlink)
     soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
@@ -194,6 +233,7 @@ def getTelangana():
     tags = tdTag.find_all('h2', attrs={'class': 'entry-title'})
 
     # Get latest date
+    printStatus(stateName)
     bulletinDate = oldDate
     bulletinLink = None
     lastUpdated = None
@@ -219,13 +259,10 @@ def getTelangana():
             bulletinLink = tag.a.get('href')
 
     # Check if latest bulletin on server is same as local file
-    filename = resourcesDir + stateName + \
-        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
-    if __isSamePDF(bulletinLink, filename):
-        lastUpdated = None
-    else:
-        lastUpdated = datetime.datetime.now()
+    printStatus(stateName)
+    lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
+    printStatus(stateName)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getAndhraPradesh():
@@ -237,12 +274,14 @@ def getAndhraPradesh():
     healthDeptlink = linkPre + '/carona_info.aspx'
 
     # Parse tags
+    printStatus(stateName, 0)
     req = urllib3.PoolManager()
     healthDeptpage = req.request('GET', healthDeptlink)
     soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
     divTags = soup.findAll('div', attrs={'class': 'col-md-3'})
 
     # Get latest date
+    printStatus(stateName)
     bulletinDate = oldDate
     bulletinLink = None
     lastUpdated = None
@@ -262,18 +301,15 @@ def getAndhraPradesh():
                     bulletinLink = linkPre + '/' + bulletinLink
 
     # Check if latest bulletin on server is same as local file
-    filename = resourcesDir + stateName + \
-        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
-    if __isSamePDF(bulletinLink, filename):
-        lastUpdated = None
-    else:
-        lastUpdated = datetime.datetime.now()
+    printStatus(stateName)
+    lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
+    printStatus(stateName)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 
 if __name__ == '__main__':
-    init()
+    init()  # Use init(verbose=True) to print out explicit status messages
     print(getKerala())
     print(getDelhi())
     print(getTelangana())
