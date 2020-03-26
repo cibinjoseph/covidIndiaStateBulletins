@@ -10,6 +10,7 @@ Each state has a getState() method which outputs a list of the form:
 """
 
 import urllib3
+import urllib.parse
 from bs4 import BeautifulSoup
 import sys
 import os
@@ -227,9 +228,53 @@ def getTelangana():
 
     return [bulletinDate, bulletinLink, lastUpdated]
 
+def getAndhraPradesh():
+    """
+    Parses Andhra Pradesh Govt website to obtain latest PDF bulletin
+    """
+    stateName = 'AndhraPradesh'
+    linkPre = 'http://hmfw.ap.gov.in'
+    healthDeptlink = linkPre + '/carona_info.aspx'
+
+    # Parse tags
+    req = urllib3.PoolManager()
+    healthDeptpage = req.request('GET', healthDeptlink)
+    soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
+    divTags = soup.findAll('div', attrs={'class': 'col-md-3'})
+
+    # Get latest date
+    bulletinDate = oldDate
+    bulletinLink = None
+    lastUpdated = None
+    for tag in divTags:
+        hTags = tag.findAll('h5')
+        for tag in hTags:
+            if ('Daily bulle' in tag.a.get('href')) and \
+               ('English' in tag.a.text.split('_')[-1]):
+                dateText = tag.a.text[0:10]
+                thisDate = datetime.datetime.strptime(dateText, '%d-%m-%Y')
+                thisDate = thisDate.date()
+                if thisDate > bulletinDate:
+                    # If parsed date is recent than that parsed before,
+                    # save the date and bulletin links
+                    bulletinDate = thisDate
+                    bulletinLink = urllib.parse.quote(tag.a.get('href'))
+                    bulletinLink = linkPre + '/' + bulletinLink
+
+    # Check if latest bulletin on server is same as local file
+    filename = resourcesDir + stateName + \
+        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
+    if __isSamePDF(bulletinLink, filename):
+        lastUpdated = None
+    else:
+        lastUpdated = datetime.datetime.now()
+
+    return [bulletinDate, bulletinLink, lastUpdated]
+
 
 if __name__ == '__main__':
     init()
     print(getKerala())
     print(getDelhi())
     print(getTelangana())
+    print(getAndhraPradesh())
