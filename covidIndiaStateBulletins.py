@@ -16,7 +16,7 @@ import os
 import datetime
 import filecmp
 from pathlib import Path
-from re import search
+from re import search, sub
 
 resourcesDir = 'resources/'
 oldDate = datetime.date(2019, 1, 1)  # A very old date for initializations
@@ -121,7 +121,7 @@ def getKerala():
 
     # Check if latest bulletin on server is same as local file
     filename = resourcesDir + stateName + \
-        bulletinDate.strftime('%d-%m-%Y') + '.pdf'
+        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
     if __isSamePDF(bulletinLink, filename):
         lastUpdated = None
     else:
@@ -169,7 +169,57 @@ def getDelhi():
 
     # Check if latest bulletin on server is same as local file
     filename = resourcesDir + stateName + \
-        bulletinDate.strftime('%d-%m-%Y') + '.pdf'
+        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
+    if __isSamePDF(bulletinLink, filename):
+        lastUpdated = None
+    else:
+        lastUpdated = datetime.datetime.now()
+
+    return [bulletinDate, bulletinLink, lastUpdated]
+
+def getTelangana():
+    """
+    Parses Telangana Govt website to obtain latest PDF bulletin
+    """
+    stateName = 'Telangana'
+    linkPre = 'https://covid19.telangana.gov.in'
+    healthDeptlink = linkPre + '/announcements/media-bulletins/'
+
+    # Parse tags
+    req = urllib3.PoolManager()
+    healthDeptpage = req.request('GET', healthDeptlink)
+    soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
+    tdTag = soup.find('div', attrs={'class': 'ast-row'})
+    tags = tdTag.find_all('h2', attrs={'class': 'entry-title'})
+
+    # Get latest date
+    bulletinDate = oldDate
+    bulletinLink = None
+    lastUpdated = None
+    for tag in tags:
+        # Use RegEx to get date string
+        dateText = search('Bulletin.(.*)', tag.a.text.title()).group(0)
+        dateText = dateText[11:].encode('ascii','ignore').decode('utf-8')
+        dateText = dateText.replace(',', ' ').strip().split()[-3:]
+        dateText = sub(r'\D', '',  dateText[0]) + ' ' + \
+                dateText[1] + ' ' + dateText[2]
+        try:
+            # Month in words
+            thisDate = datetime.datetime.strptime(dateText, '%d %B %Y')
+        except ValueError:
+            # Month as integer
+            thisDate = datetime.datetime.strptime(dateText, '%d %m %Y')
+        # Convert datetime to date class
+        thisDate = thisDate.date()
+        if thisDate > bulletinDate:
+            # If parsed date is recent than that parsed before,
+            # save the date and bulletin links
+            bulletinDate = thisDate
+            bulletinLink = tag.a.get('href')
+
+    # Check if latest bulletin on server is same as local file
+    filename = resourcesDir + stateName + \
+        bulletinDate.strftime('-%d-%m-%Y') + '.pdf'
     if __isSamePDF(bulletinLink, filename):
         lastUpdated = None
     else:
@@ -182,3 +232,4 @@ if __name__ == '__main__':
     init()
     print(getKerala())
     print(getDelhi())
+    print(getTelangana())
