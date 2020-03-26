@@ -6,6 +6,7 @@ Each state has a getState() method which outputs a list of the form:
     bulletinDate -> date when bulletin was released
     bulletinLink -> link to bulletin
     lastUpdated -> date when last updated, None if not updated
+    All dates and times are in datetime module format
 """
 
 import urllib3
@@ -24,9 +25,11 @@ def init():
     """
     Performs a few sanity checks and initializations
     """
+    # System version check
     if sys.version_info.major < 3:
         raise SyntaxError('Use python version 3+')
 
+    # Create resources/ directory
     try:
         os.mkdir(resourcesDir)
     except FileExistsError:
@@ -54,7 +57,8 @@ def __isSamePDF(serverFile, localFile):
     Checks if pdf file on server is same as local file and overwrites if not.
     """
     if Path(localFile).is_file():
-        # If local file exists
+        # If local file exists, compare files and 
+        # overwrite if different
         downloadPDF(serverFile, localFile + 'dummy')
         if filecmp.cmp(localFile, localFile + 'dummy', shallow=False):
             os.remove(localFile + 'dummy')
@@ -95,9 +99,12 @@ def getKerala():
                              int(dateText[3:5]),
                              int(dateText[0:2]))
         if date > bulletinDate:
+            # If parsed date is recent than that parsed before,
+            # save the date and bulletin links
             bulletinDate = date
             bulletinLink = linkPre + tag.a.get('href')
-            # Parse bulletin page to get pdf link
+
+            # Parse latest date's bulletin page to get pdf link
             bulletinPage = req.request('GET', bulletinLink)
             soup = BeautifulSoup(bulletinPage.data, 'html.parser')
             try:
@@ -110,12 +117,13 @@ def getKerala():
                 if 'English' in tag.text:
                     bulletinlink = linkPre + tag.a.get('href')
 
-            filename = resourcesDir + 'Kerala' + \
-                bulletinDate.strftime('%d-%m-%Y') + '.pdf'
-            if __isSamePDF(bulletinLink, filename):
-                lastUpdated = None
-            else:
-                lastUpdated = datetime.datetime.now()
+    # Check if latest bulletin on server is same as local file
+    filename = resourcesDir + 'Kerala' + \
+        bulletinDate.strftime('%d-%m-%Y') + '.pdf'
+    if __isSamePDF(bulletinLink, filename):
+        lastUpdated = None
+    else:
+        lastUpdated = datetime.datetime.now()
 
     return [bulletinDate, bulletinLink, lastUpdated]
 
