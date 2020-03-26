@@ -16,6 +16,7 @@ import os
 import datetime
 import filecmp
 from pathlib import Path
+from re import search
 
 resourcesDir = 'resources/'
 oldDate = datetime.date(2019, 1, 1)  # A very old date for initializations
@@ -78,15 +79,16 @@ def getKerala():
     """
     Parses Kerala DHS website to obtain latest PDF bulletin
     """
+    stateName = 'Kerala'
     linkPre = 'http://dhs.kerala.gov.in'
-    DHSlink = linkPre + '/%e0%b4%a1%e0%b5%86%e0%b4%af%e0%b4%bf' + \
+    healthDeptlink = linkPre + '/%e0%b4%a1%e0%b5%86%e0%b4%af%e0%b4%bf' + \
     '%e0%b4%b2%e0%b4%bf-%e0%b4%ac%e0%b5%81%e0%b4%b3%e0%b5%8d%e' + \
     '0%b4%b3%e0%b4%b1%e0%b5%8d%e0%b4%b1%e0%b4%bf%e0%b4%a8%e0%b5%8d%e2%80%8d/'
 
     # Parse tags
     req = urllib3.PoolManager()
-    DHSpage = req.request('GET', DHSlink)
-    soup = BeautifulSoup(DHSpage.data, 'html.parser')
+    healthDeptpage = req.request('GET', healthDeptlink)
+    soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
     tags = soup.findAll('h3', attrs={'class': 'entry-title'})
 
     # Get latest date
@@ -95,17 +97,17 @@ def getKerala():
     lastUpdated = None
     for tag in tags:
         dateText = tag.a.text
-        date = datetime.date(int(dateText[6:10]),
+        thisDate = datetime.date(int(dateText[6:10]),
                              int(dateText[3:5]),
                              int(dateText[0:2]))
-        if date > bulletinDate:
+        if thisDate > bulletinDate:
             # If parsed date is recent than that parsed before,
             # save the date and bulletin links
-            bulletinDate = date
-            bulletinLink = linkPre + tag.a.get('href')
+            bulletinDate = thisDate
+            bulletinPageLink = linkPre + tag.a.get('href')
 
             # Parse latest date's bulletin page to get pdf link
-            bulletinPage = req.request('GET', bulletinLink)
+            bulletinPage = req.request('GET', bulletinPageLink)
             soup = BeautifulSoup(bulletinPage.data, 'html.parser')
             try:
                 divTag = soup.find('div', attrs={'class': 'entry-content'})
@@ -115,10 +117,58 @@ def getKerala():
 
             for tag in ptags:
                 if 'English' in tag.text:
-                    bulletinlink = linkPre + tag.a.get('href')
+                    bulletinLink = linkPre + tag.a.get('href')
 
     # Check if latest bulletin on server is same as local file
-    filename = resourcesDir + 'Kerala' + \
+    filename = resourcesDir + stateName + \
+        bulletinDate.strftime('%d-%m-%Y') + '.pdf'
+    if __isSamePDF(bulletinLink, filename):
+        lastUpdated = None
+    else:
+        lastUpdated = datetime.datetime.now()
+
+    return [bulletinDate, bulletinLink, lastUpdated]
+
+def getDelhi():
+    """
+    Parses Delhi Govt website to obtain latest PDF bulletin
+    """
+    stateName = 'Delhi'
+    linkPre = 'http://health.delhigovt.nic.in'
+    healthDeptlink = linkPre + '/wps/wcm/connect/doit_health/' + \
+    'Health/Home/Covid19/Health+Bulletin'
+
+    # Parse tags
+    req = urllib3.PoolManager()
+    healthDeptpage = req.request('GET', healthDeptlink)
+    soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
+    tdTag = soup.find('td', attrs={'class': 'standard'})
+    tags = tdTag.find_all('li')
+
+    # Get latest date
+    bulletinDate = oldDate
+    bulletinLink = None
+    lastUpdated = None
+    for tag in tags:
+        # Use RegEx to get date string
+        dateText = search('Dated.(.*)', tag.a.text.title()).group(0)
+        dateText = dateText[6:].replace('.',' ').strip()
+        try:
+            # Month in words
+            thisDate = datetime.datetime.strptime(dateText, '%d %B %Y')
+        except ValueError:
+            # Month as integer
+            thisDate = datetime.datetime.strptime(dateText, '%d %m %Y')
+        # Convert datetime to date class
+        thisDate = thisDate.date()
+        if thisDate > bulletinDate:
+            # If parsed date is recent than that parsed before,
+            # save the date and bulletin links
+            bulletinDate = thisDate
+            bulletinLink = linkPre + tag.a.get('href')
+
+    # Check if latest bulletin on server is same as local file
+    filename = resourcesDir + stateName + \
         bulletinDate.strftime('%d-%m-%Y') + '.pdf'
     if __isSamePDF(bulletinLink, filename):
         lastUpdated = None
@@ -131,3 +181,4 @@ def getKerala():
 if __name__ == '__main__':
     init()
     print(getKerala())
+    print(getDelhi())
