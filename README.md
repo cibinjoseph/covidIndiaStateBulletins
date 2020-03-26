@@ -17,8 +17,13 @@ print(lastUpdatedDate.strftime('%d.%m.%Y'))  # Last updated date in specified fo
 # Documentation
 All pdf bulletins are downloaded to `resources/` directory in current path.  
 
+### Available state bulletins
+* Delhi
+* Kerala
+* Telangana
+
 ### Available functions
-For a list of available functions, import the module and use help():   
+For a list of all available functions, import the module and use help():   
 ```python
 import covidIndiaStateBulletins as co
 help(co)
