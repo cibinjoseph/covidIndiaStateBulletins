@@ -360,10 +360,60 @@ def getTamilNadu():
     printStatus(stateName)
     return [bulletinDate, bulletinLink, lastUpdated]
 
+def getKarnataka():
+    """
+    Parses Karnataka Govt website to obtain latest PDF bulletin
+    """
+    stateName = 'Karnataka'
+    linkPre = 'https://karunadu.karnataka.gov.in'
+    healthDeptlink = linkPre + '/hfw/kannada/Pages/covid-19.aspx'
+
+    # Parse tags
+    printStatus(stateName, 0)
+    try:
+        req = urllib3.PoolManager()
+        healthDeptpage = req.request('GET', healthDeptlink)
+    except urllib3.exceptions.MaxRetryError:
+        req = urllib3.PoolManager(cert_reqs='CERT_NONE')
+        simplefilter('ignore')  # Ignore SSL certificate warning
+        healthDeptpage = req.request('GET', healthDeptlink)
+    soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
+    divTags = soup.findAll('div', attrs={'id': 'zone8block'})[0]
+    for divTag in divTags:
+        if divTag.string is None:
+            if 'BULLETIN)' in divTag.text.upper():
+                tags = divTag.find_all('a')
+
+    # Get latest date
+    printStatus(stateName)
+    bulletinDate = oldDate
+    bulletinLink = None
+    lastUpdated = None
+    for tag in tags:
+            thisLink = tag.get('href')
+            if 'ENGLISH' in thisLink.upper():
+                thisDate = tag.get('href')[22:-13]
+                thisDate = datetime.datetime.strptime(thisDate, '%d-%m-%Y')
+                thisDate = thisDate.date()
+
+                if thisDate > bulletinDate:
+                    # If parsed date is recent than that parsed before,
+                    # save the date and bulletin links
+                    bulletinDate = thisDate
+                    bulletinLink = linkPre + tag.get('href')
+
+    # Check if latest bulletin on server is same as local file
+    printStatus(stateName)
+    lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
+
+    printStatus(stateName)
+    return [bulletinDate, bulletinLink, lastUpdated]
+
 if __name__ == '__main__':
     init()  # Use init(verbose=True) to print out explicit status messages
-    # print(getKerala())
-    # print(getDelhi())
-    # print(getTelangana())
-    # print(getAndhraPradesh())
+    print(getKerala())
+    print(getDelhi())
+    print(getTelangana())
+    print(getAndhraPradesh())
     print(getTamilNadu())
+    print(getKarnataka())
