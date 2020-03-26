@@ -25,6 +25,7 @@ All pdf bulletins are downloaded to `resources/` directory in current path.
 * Andhra Pradesh
 * Delhi
 * Kerala
+* Tamil Nadu
 * Telangana
 
 ### Available functions

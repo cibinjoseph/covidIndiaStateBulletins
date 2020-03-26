@@ -18,6 +18,7 @@ import datetime
 import filecmp
 from pathlib import Path
 from re import search, sub
+from warnings import simplefilter
 
 resourcesDir = 'resources/'
 oldDate = datetime.date(2019, 1, 1)  # A very old date for initializations
@@ -52,9 +53,16 @@ def downloadPDF(link, filename):
         response = req.request('GET', link)
         pdfFile = open(filename, 'wb')
         pdfFile.write(response.data)
-    except HTTPError:
-        print('Error: PDF file not found')
-        return False
+    except urllib3.exceptions.MaxRetryError:
+        # Catch SSL Certificate Error
+        req = urllib3.PoolManager(cert_reqs='CERT_NONE')
+        simplefilter('ignore')  # Ignore SSL certificate warning
+        response = req.request('GET', link)
+        pdfFile = open(filename, 'wb')
+        pdfFile.write(response.data)
+    except:
+        raise ConnectionError('ERROR: pdf file not found. \
+                              Check connection and rerun.')
     finally:
         pdfFile.close()
 
@@ -307,10 +315,55 @@ def getAndhraPradesh():
     printStatus(stateName)
     return [bulletinDate, bulletinLink, lastUpdated]
 
+def getTamilNadu():
+    """
+    Parses Tamil Nadu Govt website to obtain latest PDF bulletin
+    """
+    stateName = 'TamilNadu'
+    linkPre = 'http://stopcoronatn.in'
+    healthDeptlink = linkPre + '/dailybulletin.html'
+
+    # Parse tags
+    printStatus(stateName, 0)
+    try:
+        req = urllib3.PoolManager()
+        healthDeptpage = req.request('GET', healthDeptlink)
+    except urllib3.exceptions.MaxRetryError:
+        req = urllib3.PoolManager(cert_reqs='CERT_NONE')
+        simplefilter('ignore')  # Ignore SSL certificate warning
+        healthDeptpage = req.request('GET', healthDeptlink)
+    soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
+    divTag = soup.find('div', attrs={'class': 'information'})
+    tags = divTag.findAll('li')
+
+    # Get latest date
+    printStatus(stateName)
+    bulletinDate = oldDate
+    bulletinLink = None
+    lastUpdated = None
+    for tag in tags:
+        dateText = tag.a.text.strip().replace(',','')
+        dateText = dateText[9:20] + '20'
+        thisDate = datetime.datetime.strptime(dateText, '%d-%B-%Y')
+        thisDate = thisDate.date()
+        if thisDate > bulletinDate:
+            # If parsed date is recent than that parsed before,
+            # save the date and bulletin links
+            bulletinDate = thisDate
+            bulletinLink = linkPre + tag.a.get('href')
+
+    print(bulletinLink)
+    # Check if latest bulletin on server is same as local file
+    printStatus(stateName)
+    lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
+
+    printStatus(stateName)
+    return [bulletinDate, bulletinLink, lastUpdated]
 
 if __name__ == '__main__':
     init()  # Use init(verbose=True) to print out explicit status messages
-    print(getKerala())
-    print(getDelhi())
-    print(getTelangana())
-    print(getAndhraPradesh())
+    # print(getKerala())
+    # print(getDelhi())
+    # print(getTelangana())
+    # print(getAndhraPradesh())
+    print(getTamilNadu())
