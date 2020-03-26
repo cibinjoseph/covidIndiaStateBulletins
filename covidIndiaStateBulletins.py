@@ -122,4 +122,4 @@ def getKerala():
 
 if __name__ == '__main__':
     init()
-    getKerala()
+    print(getKerala())
