@@ -18,6 +18,7 @@ print(lastUpdatedDate.strftime('%d.%m.%Y'))  # Last updated date in specified fo
 All pdf bulletins are downloaded to `resources/` directory in current path.  
 
 ### Available state bulletins
+* Andhra Pradesh
 * Delhi
 * Kerala
 * Telangana
