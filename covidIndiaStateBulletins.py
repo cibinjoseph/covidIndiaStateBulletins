@@ -103,7 +103,7 @@ def updatePDF(stateName, bulletinDate, bulletinLink):
 
     return lastUpdated
 
-def printStatus(stateName, statusNum=None):
+def printStatus(stateName, statusNum=None, lastUpdated=None):
     """
     Prints status messages if __verbose is requested
     """
@@ -121,8 +121,12 @@ def printStatus(stateName, statusNum=None):
             3: 'Completed checking updates for state: ' + stateName
         }
         totalSteps = len(messages)
+
         print('(' + str(__statusNum) + '/' + str(totalSteps) + ') ' +  \
               messages.get(__statusNum, 'Invalid status number'))
+
+        if lastUpdated != None:
+            print('Updated bulletin available. Downloaded to resources/')
 
 def getKerala():
     """
@@ -174,7 +178,7 @@ def getKerala():
     printStatus(stateName)
     lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
-    printStatus(stateName)
+    printStatus(stateName, lastUpdated=lastUpdated)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getDelhi():
@@ -221,7 +225,7 @@ def getDelhi():
     printStatus(stateName)
     lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
-    printStatus(stateName)
+    printStatus(stateName, lastUpdated=lastUpdated)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getTelangana():
@@ -270,7 +274,7 @@ def getTelangana():
     printStatus(stateName)
     lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
-    printStatus(stateName)
+    printStatus(stateName, lastUpdated=lastUpdated)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getAndhraPradesh():
@@ -312,7 +316,7 @@ def getAndhraPradesh():
     printStatus(stateName)
     lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
-    printStatus(stateName)
+    printStatus(stateName, lastUpdated=lastUpdated)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getTamilNadu():
@@ -357,7 +361,7 @@ def getTamilNadu():
     printStatus(stateName)
     lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
-    printStatus(stateName)
+    printStatus(stateName, lastUpdated=lastUpdated)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 def getKarnataka():
@@ -406,7 +410,7 @@ def getKarnataka():
     printStatus(stateName)
     lastUpdated = updatePDF(stateName, bulletinDate, bulletinLink)
 
-    printStatus(stateName)
+    printStatus(stateName, lastUpdated=lastUpdated)
     return [bulletinDate, bulletinLink, lastUpdated]
 
 if __name__ == '__main__':
