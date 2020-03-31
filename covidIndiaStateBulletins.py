@@ -53,6 +53,7 @@ def downloadPDF(link, filename):
         response = req.request('GET', link)
         pdfFile = open(filename, 'wb')
         pdfFile.write(response.data)
+        pdfFile.close()
     except urllib3.exceptions.MaxRetryError:
         # Catch SSL Certificate Error
         req = urllib3.PoolManager(cert_reqs='CERT_NONE')
@@ -60,11 +61,9 @@ def downloadPDF(link, filename):
         response = req.request('GET', link)
         pdfFile = open(filename, 'wb')
         pdfFile.write(response.data)
-    except:
-        raise ConnectionError('ERROR: pdf file not found. \
-                              Check connection and rerun.')
-    finally:
         pdfFile.close()
+    except:
+        raise ConnectionError('ERROR: pdf file not found. Check connection and rerun.')
 
 
 def __isSamePDF(serverFile, localFile):
@@ -283,34 +282,40 @@ def getAndhraPradesh():
     """
     stateName = 'AndhraPradesh'
     linkPre = 'http://hmfw.ap.gov.in'
-    healthDeptlink = linkPre + '/carona_info.aspx'
+    healthDeptlink = linkPre + '/covid_19_dailybulletins.aspx'
 
     # Parse tags
     printStatus(stateName, 0)
     req = urllib3.PoolManager()
     healthDeptpage = req.request('GET', healthDeptlink)
     soup = BeautifulSoup(healthDeptpage.data, 'html.parser')
-    divTags = soup.findAll('div', attrs={'class': 'col-md-3'})
+    divTags = soup.findAll('div', attrs={'class': 'col-md-2'})
 
     # Get latest date
     printStatus(stateName)
     bulletinDate = oldDate
     bulletinLink = None
     lastUpdated = None
-    for tag in divTags:
-        hTags = tag.findAll('h5')
-        for tag in hTags:
-            if ('Daily bulle' in tag.a.get('href')) and \
-               ('English' in tag.a.text.split('_')[-1]):
-                dateText = tag.a.text[0:10]
-                thisDate = datetime.datetime.strptime(dateText, '%d-%m-%Y')
-                thisDate = thisDate.date()
-                if thisDate > bulletinDate:
-                    # If parsed date is recent than that parsed before,
-                    # save the date and bulletin links
-                    bulletinDate = thisDate
-                    bulletinLink = urllib.parse.quote(tag.a.get('href'))
-                    bulletinLink = linkPre + '/' + bulletinLink
+    for divTag in divTags:
+        tag = divTag.find('h5')
+        dateText = tag.a.text
+        thisDate = datetime.datetime.strptime(dateText, '%d-%m-%Y')
+        thisDate = thisDate.date()
+        if thisDate > bulletinDate:
+            # If parsed date is recent than that parsed before,
+            # save the date and bulletin links
+            bulletinDate = thisDate
+            bulletinPageLink = tag.a.get('href')
+            bulletinPageLink = linkPre + '/' + bulletinPageLink
+
+    # Get bulletin link from bulletin page
+    bulletinPage = req.request('GET', bulletinPageLink)
+    soup = BeautifulSoup(bulletinPage.data, 'html.parser')
+    aTags = soup.findAll('a', href=True)
+    for tag in aTags:
+        thisLink = tag.get('href')
+        if 'ENGLISH' in thisLink.upper():
+            bulletinLink = linkPre + thisLink
 
     # Check if latest bulletin on server is same as local file
     printStatus(stateName)
@@ -415,9 +420,12 @@ def getKarnataka():
 
 if __name__ == '__main__':
     init()  # Use init(verbose=True) to print out explicit status messages
-    print(getKerala())
-    print(getDelhi())
-    print(getTelangana())
-    print(getAndhraPradesh())
-    print(getTamilNadu())
-    print(getKarnataka())
+    try:
+        print(getKerala())
+        print(getDelhi())
+        print(getAndhraPradesh())
+        print(getTamilNadu())
+        print(getKarnataka())
+        print(getTelangana())
+    except urllib3.exceptions.MaxRetryError:
+        raise ConnectionError('NO INTERNET')
