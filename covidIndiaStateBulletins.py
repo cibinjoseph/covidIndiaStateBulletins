@@ -402,7 +402,13 @@ def getKarnataka():
             thisLink = tag.get('href')
             if 'ENGLISH' in thisLink.upper():
                 thisDate = tag.get('href')[22:-13]
-                thisDate = datetime.datetime.strptime(thisDate, '%d-%m-%Y')
+                try:
+                    thisDate = datetime.datetime.strptime(thisDate, '%d-%m-%Y')
+                except ValueError:
+                    # Correct error in month format
+                    thisDate = thisDate.replace('-30-', '-03-')
+                    thisDate = datetime.datetime.strptime(thisDate, '%d-%m-%Y')
+
                 thisDate = thisDate.date()
 
                 if thisDate > bulletinDate:
@@ -421,10 +427,10 @@ def getKarnataka():
 if __name__ == '__main__':
     init()  # Use init(verbose=True) to print out explicit status messages
     try:
-        print(getKerala())
-        print(getDelhi())
-        print(getAndhraPradesh())
-        print(getTamilNadu())
+        # print(getKerala())
+        # print(getDelhi())
+        # print(getAndhraPradesh())
+        # print(getTamilNadu())
         print(getKarnataka())
         print(getTelangana())
     except urllib3.exceptions.MaxRetryError:
