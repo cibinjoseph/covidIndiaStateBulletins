@@ -314,8 +314,14 @@ def getAndhraPradesh():
     aTags = soup.findAll('a', href=True)
     for tag in aTags:
         thisLink = tag.get('href')
+        print('HELLOOO ' + thisLink.upper())
         if 'ENGLISH' in thisLink.upper():
             bulletinLink = linkPre + thisLink
+            break
+        elif 'TELUGU' in thisLink.upper():
+            bulletinLink = linkPre + thisLink
+            break
+
 
     # Check if latest bulletin on server is same as local file
     printStatus(stateName)
@@ -432,6 +438,6 @@ if __name__ == '__main__':
         print(getAndhraPradesh())
         print(getTamilNadu())
         print(getKarnataka())
-        # print(getTelangana())
+        print(getTelangana())
     except urllib3.exceptions.MaxRetryError:
         raise ConnectionError('NO INTERNET OR UNAVAILABLE')
