@@ -437,7 +437,7 @@ if __name__ == '__main__':
         print(getDelhi())
         print(getAndhraPradesh())
         print(getTamilNadu())
-        print(getKarnataka())
+        # print(getKarnataka())
         print(getTelangana())
     except urllib3.exceptions.MaxRetryError:
         raise ConnectionError('NO INTERNET OR UNAVAILABLE')
